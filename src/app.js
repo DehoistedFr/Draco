@@ -25,7 +25,7 @@ const DRACO_PRESENCE = {
     {
       name: 'custom',
       type: ActivityType.Custom,
-      state: 'Serving Draco Master',
+      state: 'Serving Draco Lord',
     },
   ],
 };
