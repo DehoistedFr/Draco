@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, Collection, GatewayIntentBits, ActivityType } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, ActivityType, Events } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
@@ -17,6 +17,18 @@ import { initializeMusic } from './services/music/riffySetup.js';
 import { shutdownMusic } from './services/music/playerHandler.js';
 import pkg from '../package.json' with { type: 'json' };
 import { EXPECTED_SCHEMA_VERSION, EXPECTED_SCHEMA_LABEL } from './config/database/schemaVersion.js';
+
+// Bot status shown on the profile
+const DRACO_PRESENCE = {
+  status: 'online',
+  activities: [
+    {
+      name: 'custom',
+      type: ActivityType.Custom,
+      state: 'Serving Draco Lord',
+    },
+  ],
+};
 
 class Draco extends Client {
   constructor() {
@@ -36,16 +48,7 @@ class Draco extends Client {
         GatewayIntentBits.GuildBans,                    
       ],
       // Bot status: shows "Serving Draco Lord" on the bot's profile
-      presence: {
-        status: 'online',
-        activities: [
-          {
-            name: 'custom',
-            type: ActivityType.Custom,
-            state: 'Serving Draco Lord',
-          },
-        ],
-      },
+      presence: DRACO_PRESENCE,
     });
 
     this.config = config;
@@ -97,6 +100,20 @@ class Draco extends Client {
 
       initializeMusic(this);
       
+      // Re-apply the status after the bot is ready, so no other file can override it
+      const applyStatus = () => {
+        try {
+          this.user?.setPresence(DRACO_PRESENCE);
+        } catch (error) {
+          logger.warn('Could not set bot status:', error.message);
+        }
+      };
+      this.once(Events.ClientReady, () => {
+        applyStatus();
+        setTimeout(applyStatus, 5000);
+        this.statusInterval = setInterval(applyStatus, 60000);
+      });
+
       startupLog('Logging into Discord...');
       await this.login(this.config.bot.token);
       startupLog('Discord login successful');
@@ -349,6 +366,8 @@ class Draco extends Client {
 
     try {
       
+      if (this.statusInterval) clearInterval(this.statusInterval);
+
       logger.info('Stopping cron jobs...');
       cron.getTasks().forEach(task => task.stop());
       logger.info('✅ Cron jobs stopped');
@@ -440,4 +459,4 @@ try {
 }
 
 export default Draco;
-      
+        
