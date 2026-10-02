@@ -1,5 +1,5 @@
-﻿import 'dotenv/config';
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import 'dotenv/config';
+import { Client, Collection, GatewayIntentBits, ActivityType } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
@@ -18,7 +18,7 @@ import { shutdownMusic } from './services/music/playerHandler.js';
 import pkg from '../package.json' with { type: 'json' };
 import { EXPECTED_SCHEMA_VERSION, EXPECTED_SCHEMA_LABEL } from './config/database/schemaVersion.js';
 
-class TitanBot extends Client {
+class Draco extends Client {
   constructor() {
     super({
       intents: [
@@ -35,6 +35,17 @@ class TitanBot extends Client {
 
         GatewayIntentBits.GuildBans,                    
       ],
+      // Bot status: shows "Serving Draco Lord" on the bot's profile
+      presence: {
+        status: 'online',
+        activities: [
+          {
+            name: 'custom',
+            type: ActivityType.Custom,
+            state: 'Serving Draco Lord',
+          },
+        ],
+      },
     });
 
     this.config = config;
@@ -50,7 +61,7 @@ class TitanBot extends Client {
 
   async start() {
     try {
-      startupLog('Starting TitanBot...');
+      startupLog('Starting Draco...');
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       startupLog('Initializing database...');
@@ -204,7 +215,7 @@ class TitanBot extends Client {
 
     app.get('/', (req, res) => {
       res.status(200).json({ 
-        message: 'TitanBot System Online',
+        message: 'Draco System Online',
         version: pkg.version,
         timestamp: new Date().toISOString()
       });
@@ -388,7 +399,7 @@ class TitanBot extends Client {
 }
 
 try {
-  const bot = new TitanBot();
+  const bot = new Draco();
   
   const setupShutdown = () => {
     process.on('SIGTERM', () => bot.shutdown('SIGTERM'));
@@ -428,4 +439,5 @@ try {
   process.exit(1);
 }
 
-export default TitanBot;
+export default Draco;
+      
